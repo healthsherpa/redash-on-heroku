@@ -5,4 +5,4 @@ ENV QUEUES="periodic emails default"
 
 WORKDIR /app
 
-CMD /usr/local/bin/celery worker --app=redash.worker --beat -c$WORKERS_COUNT -Q$QUEUES -linfo --maxtasksperchild=10 -Ofair
+CMD exec supervisord -c worker.conf

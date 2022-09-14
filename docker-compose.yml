@@ -36,7 +36,7 @@ services:
   worker:
     build:
       context: .
-      dockerfile: Dockerfile.generalrq
+      dockerfile: Dockerfile.worker
     command: worker
     environment:
       PYTHONUNBUFFERED: 0
