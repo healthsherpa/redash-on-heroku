@@ -1,8 +1,0 @@
-FROM redash/redash:10.1.0.b50633
-
-ENV WORKERS_COUNT=1
-ENV QUEUES="periodic emails default"
-
-WORKDIR /app
-
-CMD exec supervisord -c worker.conf

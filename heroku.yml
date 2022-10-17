@@ -3,4 +3,3 @@ build:
     web: Dockerfile.web
     worker: Dockerfile.worker
     scheduler: Dockerfile.scheduler
-    services: Dockerfile.services
