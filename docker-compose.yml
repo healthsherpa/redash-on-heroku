@@ -23,6 +23,8 @@ services:
       REDASH_COOKIE_SECRET: veryverysecrettoken
       REDASH_SECRET_KEY: veryverysecretkey
       REDASH_WEB_WORKERS: 4
+      SNOWFLAKE_PRIVATE_KEY_B64: "${SNOWFLAKE_PRIVATE_KEY_B64}"
+      REDASH_ADDITIONAL_QUERY_RUNNERS: "${REDASH_ADDITIONAL_QUERY_RUNNERS}"
   scheduler:
     build:
       context: .
@@ -34,6 +36,9 @@ services:
       REDASH_REDIS_URL: "redis://redis:6379/0"
       REDASH_DATABASE_URL: "postgresql://postgres@postgres/postgres"
       REDASH_COOKIE_SECRET: veryverysecrettoken
+      REDASH_SECRET_KEY: veryverysecretkey
+      SNOWFLAKE_PRIVATE_KEY_B64: "${SNOWFLAKE_PRIVATE_KEY_B64}"
+      REDASH_ADDITIONAL_QUERY_RUNNERS: "${REDASH_ADDITIONAL_QUERY_RUNNERS}"
   worker:
     build:
       context: .
@@ -47,6 +52,9 @@ services:
       QUEUES: "queries scheduled_queries schemas periodic emails default"
       WORKERS_COUNT: 4
       REDASH_COOKIE_SECRET: veryverysecrettoken
+      REDASH_SECRET_KEY: veryverysecretkey
+      SNOWFLAKE_PRIVATE_KEY_B64: "${SNOWFLAKE_PRIVATE_KEY_B64}"
+      REDASH_ADDITIONAL_QUERY_RUNNERS: "${REDASH_ADDITIONAL_QUERY_RUNNERS}"
   redis:
     image: redis:3.0-alpine
   postgres:
