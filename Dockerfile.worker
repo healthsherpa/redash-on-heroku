@@ -1,4 +1,6 @@
 FROM redash/redash:10.1.0.b50633
+RUN pip install snowflake-connector-python cryptography
+COPY redash/query_runner/snowflake_keypair_env.py /app/redash/query_runner/
 
 ENV WORKERS_COUNT=${WORKERS_COUNT:-1}
 ENV QUEUES="queries scheduled_queries schemas periodic emails default"

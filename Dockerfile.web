@@ -1,3 +1,7 @@
 FROM redash/redash:10.1.0.b50633
+RUN pip install snowflake-connector-python cryptography
+COPY redash/query_runner/snowflake_keypair_env.py /app/redash/query_runner/
+RUN cp /app/client/dist/images/db-logos/snowflake.png \
+        /app/client/dist/images/db-logos/snowflake_keypair_env.png || true
 WORKDIR /app
 CMD /usr/local/bin/gunicorn -b 0.0.0.0:$PORT --name redash -w${REDASH_WEB_WORKERS:-1} redash.wsgi:app
