@@ -179,5 +179,54 @@ class SnowflakeKeyPairEnv(BaseSQLQueryRunner):
             connection.close()
         return json_data, error
 
+    # Only needed for get_schema
+    def _parse_results(self, cursor):
+        columns = self.fetch_columns(
+            [(i[0], self.determine_type(i[1], i[5])) for i in cursor.description]
+        )
+        rows = [
+            dict(zip((column["name"] for column in columns), row)) for row in cursor
+        ]
+
+        data = {"columns": columns, "rows": rows}
+        return data
+    
+    # Only needed for get_schema
+    def _run_query_without_warehouse(self, query):
+        connection = self._get_connection()
+        cursor = connection.cursor()
+
+        try:
+            cursor.execute("USE {}".format(self.configuration["database"]))
+
+            cursor.execute(query)
+
+            data = self._parse_results(cursor)
+            error = None
+        finally:
+            cursor.close()
+            connection.close()
+
+        return data, error 
+    
+    def get_schema(self, get_stats=False):
+        query = "SHOW COLUMNS"
+
+        results, error = self._run_query_without_warehouse(query)
+
+        if error is not None:
+            raise Exception("Failed getting schema.")
+
+        schema = {}
+        for row in results["rows"]:
+            if row["kind"] == "COLUMN":
+                table_name = "{}.{}".format(row["schema_name"], row["table_name"])
+
+                if table_name not in schema:
+                    schema[table_name] = {"name": table_name, "columns": []}
+
+                schema[table_name]["columns"].append(row["column_name"])
+
+        return list(schema.values())
 
 register(SnowflakeKeyPairEnv)
