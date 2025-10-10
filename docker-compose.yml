@@ -7,6 +7,7 @@
 version: '2'
 services:
   server:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: Dockerfile.web
@@ -26,6 +27,7 @@ services:
       SNOWFLAKE_PRIVATE_KEY_B64: "${SNOWFLAKE_PRIVATE_KEY_B64}"
       REDASH_ADDITIONAL_QUERY_RUNNERS: "${REDASH_ADDITIONAL_QUERY_RUNNERS}"
   scheduler:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: Dockerfile.scheduler
@@ -40,6 +42,7 @@ services:
       SNOWFLAKE_PRIVATE_KEY_B64: "${SNOWFLAKE_PRIVATE_KEY_B64}"
       REDASH_ADDITIONAL_QUERY_RUNNERS: "${REDASH_ADDITIONAL_QUERY_RUNNERS}"
   worker:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: Dockerfile.worker
@@ -56,12 +59,15 @@ services:
       SNOWFLAKE_PRIVATE_KEY_B64: "${SNOWFLAKE_PRIVATE_KEY_B64}"
       REDASH_ADDITIONAL_QUERY_RUNNERS: "${REDASH_ADDITIONAL_QUERY_RUNNERS}"
   redis:
+    platform: linux/amd64
     image: redis:3.0-alpine
   postgres:
+    platform: linux/amd64
     image: postgres:9.5.6-alpine
     # volumes:
     #   - /opt/postgres-data:/var/lib/postgresql/data
   nginx:
+    platform: linux/amd64
     image: redash/nginx:latest
     ports:
       - "8080:80"

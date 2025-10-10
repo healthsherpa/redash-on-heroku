@@ -9,6 +9,7 @@ from redash.query_runner import (
     TYPE_DATETIME,
     TYPE_INTEGER,
     TYPE_FLOAT,
+    TYPE_DATE,
 )
 from redash.utils import json_dumps
 
@@ -28,7 +29,7 @@ except ImportError:
 TYPES_MAP = {
     "TEXT": TYPE_STRING,
     "BOOLEAN": TYPE_BOOLEAN,
-    "DATE": TYPE_DATETIME,
+    "DATE": TYPE_DATE,
     "TIMESTAMP": TYPE_DATETIME,
     "TIMESTAMP_LTZ": TYPE_DATETIME,
     "TIMESTAMP_TZ": TYPE_DATETIME,
@@ -41,6 +42,18 @@ TYPES_MAP = {
     "INTEGER": TYPE_INTEGER,
 }
 
+NUMERIC_TYPES_MAP = {
+    0: TYPE_INTEGER,
+    1: TYPE_FLOAT,
+    2: TYPE_STRING,
+    3: TYPE_DATE,
+    4: TYPE_DATETIME,
+    5: TYPE_STRING,
+    6: TYPE_DATETIME,
+    7: TYPE_DATETIME,
+    8: TYPE_DATETIME,
+    13: TYPE_BOOLEAN,
+}
 
 class SnowflakeKeyPairEnv(BaseSQLQueryRunner):
     noop_query = "SELECT 1"
@@ -179,5 +192,67 @@ class SnowflakeKeyPairEnv(BaseSQLQueryRunner):
             connection.close()
         return json_data, error
 
+    # Only needed for get_schema
+    def _parse_results(self, cursor):
+        columns = self.fetch_columns(
+            [(i[0], self.determine_type(i[1], i[5])) for i in cursor.description]
+        )
+        rows = [
+            dict(zip((column["name"] for column in columns), row)) for row in cursor
+        ]
+
+        data = {"columns": columns, "rows": rows}
+        return data
+    
+    # Only needed for get_schema
+    def _run_query_without_warehouse(self, query):
+        connection = self._get_connection()
+        cursor = connection.cursor()
+
+        try:
+            database = self.configuration["database"]
+            schema = self.configuration.get("schema")
+            if schema:
+                cursor.execute("USE {}.{}".format(database, schema))
+            else:
+                cursor.execute("USE {}".format(database))
+
+            cursor.execute(query)
+
+            data = self._parse_results(cursor)
+            error = None
+        finally:
+            cursor.close()
+            connection.close()
+
+        return data, error 
+    
+    @classmethod
+    def determine_type(cls, data_type, scale):
+        if isinstance(data_type, int):
+            t = NUMERIC_TYPES_MAP.get(data_type)
+            if t == TYPE_INTEGER and scale and scale > 0:
+                return TYPE_FLOAT
+            return t or TYPE_STRING
+        if isinstance(data_type, str):
+            return TYPES_MAP.get(data_type.upper(), TYPE_STRING)
+        return TYPE_STRING
+
+
+    def get_schema(self, get_stats=False):
+        query = "SHOW COLUMNS"
+
+        results, error = self._run_query_without_warehouse(query)
+        if error is not None:
+            raise Exception("Failed getting schema.")
+
+        schema = {}
+        for row in results["rows"]:
+            if row["kind"] == "COLUMN":
+                table_name = "{}.{}".format(row["schema_name"], row["table_name"])
+                if table_name not in schema:
+                    schema[table_name] = {"name": table_name, "columns": []}
+                schema[table_name]["columns"].append(row["column_name"])
+        return list(schema.values())
 
 register(SnowflakeKeyPairEnv)
