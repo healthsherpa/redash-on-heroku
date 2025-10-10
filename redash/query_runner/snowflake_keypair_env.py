@@ -210,7 +210,12 @@ class SnowflakeKeyPairEnv(BaseSQLQueryRunner):
         cursor = connection.cursor()
 
         try:
-            cursor.execute("USE {}".format(self.configuration["database"]))
+            database = self.configuration["database"]
+            schema = self.configuration.get("schema")
+            if schema:
+                cursor.execute("USE {}.{}".format(database, schema))
+            else:
+                cursor.execute("USE {}".format(database))
 
             cursor.execute(query)
 
