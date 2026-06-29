@@ -54,19 +54,22 @@ redirect URLs.
 
 On each request it:
 
-1. Strips `X-Forwarded-Host` from the WSGI environ (Heroku already sets the
-   correct hostname in `Host`)
-2. Rejects requests whose `Host` header is not in the allowlist (when configured)
+1. Strips `X-Forwarded-Host` when it fails the same allowlist check used for
+   `Host` (`REDASH_HOST` + `REDASH_ALLOWED_HOSTS`). Allowlisted values are kept.
+2. Rejects requests whose `Host` header fails that same check (when
+   `REDASH_VALIDATE_HOST` is enabled)
 3. Sets Flask `SERVER_NAME` and `PREFERRED_URL_SCHEME` from `REDASH_HOST`
+
+If `REDASH_HOST` is unset, the allowlist is empty and both checks are skipped.
 
 Environment variables read by `wsgi_heroku.py`:
 
 | Variable                        | Default   | Description                                                                                                                                                    |
 | ------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `REDASH_HOST`                   | _(unset)_ | Canonical URL for the app (e.g. `https://redash.example.com`). Used for the host allowlist and Flask `SERVER_NAME`. Required for host validation to be active. |
-| `REDASH_ALLOWED_HOSTS`          | _(unset)_ | Comma-separated extra hostnames allowed in the `Host` header (e.g. a Heroku default domain during migration).                                                  |
-| `REDASH_STRIP_X_FORWARDED_HOST` | `true`    | Remove `X-Forwarded-Host` before the request reaches Redash.                                                                                                   |
-| `REDASH_VALIDATE_HOST`          | `true`    | Return `400` when `Host` does not match `REDASH_HOST` or `REDASH_ALLOWED_HOSTS`. Skipped if no allowlist is configured.                                        |
+| `REDASH_ALLOWED_HOSTS`          | _(unset)_ | Comma-separated extra hostnames allowed in `Host` and `X-Forwarded-Host` (e.g. a Heroku default domain during migration).                                      |
+| `REDASH_STRIP_X_FORWARDED_HOST` | `true`    | Strip `X-Forwarded-Host` when it fails the same allowlist check as `Host`.                                                                                     |
+| `REDASH_VALIDATE_HOST`          | `true`    | Return `400` when `Host` fails the allowlist check. Skipped if `REDASH_HOST` is unset.                                                                         |
 
 Example:
 

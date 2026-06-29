@@ -5,9 +5,9 @@ Redash wraps the app with Werkzeug ProxyFix (x_host=1), which trusts
 X-Forwarded-Host for redirect URL generation. Clients can supply that header
 directly; Heroku forwards it even though the router does not trust it.
 
-On Heroku the authoritative public hostname is already in the Host header, so
-we strip X-Forwarded-Host before the request reaches Redash and optionally pin
-Flask's SERVER_NAME to REDASH_HOST.
+On Heroku the authoritative public hostname is already in the Host header.
+Non-allowlisted X-Forwarded-Host values are stripped before Redash's ProxyFix
+runs; allowlisted values are passed through for trusted proxy setups.
 """
 import os
 from urllib.parse import urlparse
@@ -38,16 +38,16 @@ def _allowed_hosts():
     return hosts
 
 
-def _host_is_allowed(host_header, allowed_hosts):
+def _host_matches_allowlist(host_value, allowed_hosts):
     if not allowed_hosts:
         return True
-    if not host_header:
+    if not host_value:
         return False
 
-    host_header = host_header.lower()
-    hostname = host_header.split(":")[0]
+    host_value = host_value.lower()
+    hostname = host_value.split(":")[0]
     for allowed in allowed_hosts:
-        if host_header == allowed:
+        if host_value == allowed:
             return True
         if hostname == allowed.split(":")[0]:
             return True
@@ -77,14 +77,15 @@ allowed_hosts = _allowed_hosts()
 
 def app(environ, start_response):
     if STRIP_X_FORWARDED_HOST:
-        environ.pop("HTTP_X_FORWARDED_HOST", None)
+        forwarded_host = environ.get("HTTP_X_FORWARDED_HOST")
+        if forwarded_host and not _host_matches_allowlist(forwarded_host, allowed_hosts):
+            environ.pop("HTTP_X_FORWARDED_HOST", None)
 
-    if VALIDATE_HOST and allowed_hosts:
-        if not _host_is_allowed(environ.get("HTTP_HOST", ""), allowed_hosts):
-            start_response(
-                "400 Bad Request",
-                [("Content-Type", "text/plain; charset=utf-8")],
-            )
-            return [b"Invalid Host header"]
+    if VALIDATE_HOST and not _host_matches_allowlist(environ.get("HTTP_HOST", ""), allowed_hosts):
+        start_response(
+            "400 Bad Request",
+            [("Content-Type", "text/plain; charset=utf-8")],
+        )
+        return [b"Invalid Host header"]
 
     return flask_app(environ, start_response)
