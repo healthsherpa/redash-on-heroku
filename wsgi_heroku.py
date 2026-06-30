@@ -82,10 +82,6 @@ def app(environ, start_response):
             environ.pop("HTTP_X_FORWARDED_HOST", None)
 
     if VALIDATE_HOST and not _host_matches_allowlist(environ.get("HTTP_HOST", ""), allowed_hosts):
-        start_response(
-            "400 Bad Request",
-            [("Content-Type", "text/plain; charset=utf-8")],
-        )
-        return [b"Invalid Host header"]
+        environ["HTTP_HOST"] = redash_host
 
     return flask_app(environ, start_response)

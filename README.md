@@ -54,22 +54,21 @@ redirect URLs.
 
 On each request it:
 
-1. Strips `X-Forwarded-Host` when it fails the same allowlist check used for
-   `Host` (`REDASH_HOST` + `REDASH_ALLOWED_HOSTS`). Allowlisted values are kept.
-2. Rejects requests whose `Host` header fails that same check (when
-   `REDASH_VALIDATE_HOST` is enabled)
+1. Strips `X-Forwarded-Host` when it fails the allowlist check (`REDASH_HOST` +
+   `REDASH_ALLOWED_HOSTS`). Allowlisted values are kept.
+2. Rewrites `Host` to `REDASH_HOST` on every request when `REDASH_HOST` is set
 3. Sets Flask `SERVER_NAME` and `PREFERRED_URL_SCHEME` from `REDASH_HOST`
 
-If `REDASH_HOST` is unset, the allowlist is empty and both checks are skipped.
+If `REDASH_HOST` is unset, the allowlist is empty, `Host` is not rewritten, and
+the `X-Forwarded-Host` strip is skipped.
 
 Environment variables read by `wsgi_heroku.py`:
 
 | Variable                        | Default   | Description                                                                                                                                                    |
 | ------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `REDASH_HOST`                   | _(unset)_ | Canonical URL for the app (e.g. `https://redash.example.com`). Used for the host allowlist and Flask `SERVER_NAME`. Required for host validation to be active. |
-| `REDASH_ALLOWED_HOSTS`          | _(unset)_ | Comma-separated extra hostnames allowed in `Host` and `X-Forwarded-Host` (e.g. a Heroku default domain during migration).                                      |
-| `REDASH_STRIP_X_FORWARDED_HOST` | `true`    | Strip `X-Forwarded-Host` when it fails the same allowlist check as `Host`.                                                                                     |
-| `REDASH_VALIDATE_HOST`          | `true`    | Return `400` when `Host` fails the allowlist check. Skipped if `REDASH_HOST` is unset.                                                                         |
+| `REDASH_HOST`                   | _(unset)_ | Canonical URL for the app (e.g. `https://redash.example.com`). Used for Flask `SERVER_NAME` and to rewrite `Host` on every request.                          |
+| `REDASH_ALLOWED_HOSTS`          | _(unset)_ | Comma-separated extra hostnames allowed in `X-Forwarded-Host` (e.g. a Heroku default domain during migration).                                                 |
+| `REDASH_STRIP_X_FORWARDED_HOST` | `true`    | Strip `X-Forwarded-Host` when it fails the allowlist check.                                                                                                    |
 
 Example:
 
