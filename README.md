@@ -45,6 +45,38 @@ heroku config:set REDASH_MAIL_DEFAULT_SENDER=YOUR_MAIL_ADDRESS
 
 See also https://redash.io/help/open-source/setup#-setup
 
+### `wsgi_heroku.py`
+
+The web dyno loads `wsgi_heroku.py` instead of Redash's default `redash.wsgi`.
+It wraps the normal Flask app and runs before Redash's `ProxyFix` middleware,
+which otherwise trusts `X-Forwarded-Host` and can reflect a spoofed hostname in
+redirect URLs.
+
+On each request it:
+
+1. Strips `X-Forwarded-Host` when it fails the allowlist check (`REDASH_HOST` +
+   `REDASH_ALLOWED_HOSTS`). Allowlisted values are kept.
+2. Rewrites `Host` to `REDASH_HOST` on every request when `REDASH_HOST` is set
+3. Sets Flask `SERVER_NAME` and `PREFERRED_URL_SCHEME` from `REDASH_HOST`
+
+If `REDASH_HOST` is unset, the allowlist is empty, `Host` is not rewritten, and
+the `X-Forwarded-Host` strip is skipped.
+
+Environment variables read by `wsgi_heroku.py`:
+
+| Variable                        | Default   | Description                                                                                                                                                    |
+| ------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `REDASH_HOST`                   | _(unset)_ | Canonical URL for the app (e.g. `https://redash.example.com`). Used for Flask `SERVER_NAME` and to rewrite `Host` on every request.                          |
+| `REDASH_ALLOWED_HOSTS`          | _(unset)_ | Comma-separated extra hostnames allowed in `X-Forwarded-Host` (e.g. a Heroku default domain during migration).                                                 |
+| `REDASH_STRIP_X_FORWARDED_HOST` | `true`    | Strip `X-Forwarded-Host` when it fails the allowlist check.                                                                                                    |
+
+Example:
+
+```sh
+heroku config:set REDASH_HOST=https://redash.example.com
+heroku config:set REDASH_ALLOWED_HOSTS=your-app.herokuapp.com
+```
+
 ### Release container
 
 ```sh
