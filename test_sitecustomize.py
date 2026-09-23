@@ -1,4 +1,8 @@
 import importlib.util
+import os
+import subprocess
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -106,6 +110,39 @@ class RewriteHerokuRedisUrlsTest(unittest.TestCase):
             _REDIS_URL_VARS,
             ("REDASH_REDIS_URL", "REDIS_URL", "RQ_REDIS_URL"),
         )
+
+
+class PythonpathAutoloadTest(unittest.TestCase):
+    def test_sitecustomize_autoloads_when_repo_is_on_pythonpath(self):
+        """Docker sets PYTHONPATH=/app so site.py imports /app/sitecustomize.py."""
+        repo = str(Path(__file__).resolve().parent)
+        env = os.environ.copy()
+        env["PYTHONPATH"] = repo
+        env["REDIS_URL"] = "rediss://dummy-redis:6379/0"
+        env["REDASH_REDIS_URL"] = "rediss://dummy-redis:6379/1"
+        env["RQ_REDIS_URL"] = "redis://dummy-redis:6379/2"
+        script = (
+            "import os;"
+            "print(os.environ['REDIS_URL']);"
+            "print(os.environ['REDASH_REDIS_URL']);"
+            "print(os.environ['RQ_REDIS_URL'])"
+        )
+        output = subprocess.check_output(
+            [sys.executable, "-c", script],
+            env=env,
+            cwd=tempfile.gettempdir(),
+            text=True,
+        )
+        redis_url, redash_url, rq_url = output.strip().splitlines()
+        self.assertEqual(
+            redis_url,
+            "rediss://dummy-redis:6379/0?ssl_cert_reqs=none",
+        )
+        self.assertEqual(
+            redash_url,
+            "rediss://dummy-redis:6379/1?ssl_cert_reqs=none",
+        )
+        self.assertEqual(rq_url, "redis://dummy-redis:6379/2")
 
 
 if __name__ == "__main__":
