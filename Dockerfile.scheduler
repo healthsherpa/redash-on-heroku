@@ -2,7 +2,9 @@ FROM redash/redash:10.1.0.b50633
 RUN pip install snowflake-connector-python cryptography
 COPY redash/query_runner/snowflake_keypair_env.py /app/redash/query_runner/
 COPY sitecustomize.py /app/sitecustomize.py
-RUN python -c "import os, site, shutil; shutil.copy('/app/sitecustomize.py', os.path.join(site.getsitepackages()[0], 'sitecustomize.py'))"
+# The Redash 10 image cannot write system site-packages. site.py imports
+# sitecustomize from sys.path, so PYTHONPATH=/app is enough for every dyno.
+ENV PYTHONPATH=/app${PYTHONPATH:+:$PYTHONPATH}
 
 WORKDIR /app
 

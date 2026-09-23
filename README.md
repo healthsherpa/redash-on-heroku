@@ -22,7 +22,7 @@ Add following addons on heroku dashboard.
 
 Choose redis addon allow more than or equal 30 connections. Otherwise you will get connection errors frequently.
 
-Heroku Redis (Key-Value Store) uses `rediss://` with a self-signed certificate. Redash 10's redis-py client needs `ssl_cert_reqs=none`. This image rewrites `REDASH_REDIS_URL` / `REDIS_URL` / `RQ_REDIS_URL` at boot so addon config updates do not 500 the app.
+Heroku Redis (Key-Value Store) uses `rediss://` with a self-signed certificate. Redash 10's redis-py client needs `ssl_cert_reqs=none`. This image loads `sitecustomize.py` via `PYTHONPATH=/app` (not a site-packages copy) and rewrites `REDASH_REDIS_URL` / `REDIS_URL` / `RQ_REDIS_URL` at boot so addon config updates do not 500 the app.
 
 ### Add environment variables
 

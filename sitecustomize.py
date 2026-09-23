@@ -5,6 +5,9 @@ certificates. Redash 10.1 calls redis.from_url() without ssl_cert_reqs=None,
 which raises CERTIFICATE_VERIFY_FAILED on session/page load. Addon updates
 overwrite REDIS_URL / REDASH_REDIS_URL, so inject ssl_cert_reqs=none here at
 process start instead of relying on a sticky config var.
+
+Docker sets PYTHONPATH=/app so site.py auto-imports this file. Do not copy it
+into system site-packages; the redash/redash:10.1.0 image cannot write there.
 """
 import os
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
