@@ -2,6 +2,8 @@ FROM redash/redash:10.1.0.b50633
 RUN pip install snowflake-connector-python cryptography
 COPY redash/query_runner/snowflake_keypair_env.py /app/redash/query_runner/
 COPY wsgi_heroku.py /app/wsgi_heroku.py
+COPY sitecustomize.py /app/sitecustomize.py
+RUN python -c "import os, site, shutil; shutil.copy('/app/sitecustomize.py', os.path.join(site.getsitepackages()[0], 'sitecustomize.py'))"
 RUN cp /app/client/dist/images/db-logos/snowflake.png \
         /app/client/dist/images/db-logos/snowflake_keypair_env.png || true
 WORKDIR /app

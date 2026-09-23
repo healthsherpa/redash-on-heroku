@@ -9,6 +9,7 @@ On Heroku the authoritative public hostname is already in the Host header.
 Non-allowlisted X-Forwarded-Host values are stripped before Redash's ProxyFix
 runs; allowlisted values are passed through for trusted proxy setups.
 """
+import sitecustomize  # noqa: F401  # Heroku KVS self-signed Redis TLS certs
 import os
 from urllib.parse import urlparse
 
